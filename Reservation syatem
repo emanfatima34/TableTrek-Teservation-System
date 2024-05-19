@@ -1,0 +1,605 @@
+package com.mycompany.mavenproject61;
+/**
+ *
+ * @author HP
+
+import java.time.LocalDateTime;
+import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Scanner;
+
+// Restaurant class representing a restaurant
+class Restaurant {
+    private String name;
+    private TableManager tableManager;
+
+    public Restaurant(String name) {
+        this.name = name;
+        this.tableManager = new TableManager();
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public TableManager getTableManager() {
+        return tableManager;
+    }
+}
+
+// Table class representing a table in the restaurant
+class Table {
+    private int id;
+    private int capacity;
+    private boolean isAvailable;
+    private Reservation[] reservations;
+    private static final int MAX_RESERVATIONS = 5; // Maximum number of reservations per table
+
+    public Table(int id, int capacity) {
+        this.id = id;
+        this.capacity = capacity;
+        this.isAvailable = true;
+        this.reservations = new Reservation[MAX_RESERVATIONS]; // Initialize reservations array
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public int getCapacity() {
+        return capacity;
+    }
+
+    public boolean isAvailable() {
+        return isAvailable;
+    }
+
+    public void setAvailable(boolean available) {
+        isAvailable = available;
+    }
+
+    public Reservation[] getReservations() {
+        return reservations;
+    }
+}
+
+// TableManager class responsible for managing tables and their availability
+class TableManager {
+    private Table[] tables;
+
+    public TableManager() {
+        // Initialize tables with some predefined capacity
+        this.tables = new Table[10];
+        tables[0] = new Table(1, 2);
+        tables[1] = new Table(2, 4);
+        tables[2] = new Table(3, 4);
+        tables[3] = new Table(4, 6);
+        tables[4] = new Table(5, 2);
+        tables[5] = new Table(6, 4);
+        tables[6] = new Table(7, 4);
+        tables[7] = new Table(8, 6);
+        tables[8] = new Table(9, 2);
+        tables[9] = new Table(10, 4);
+    }
+
+    // Get available tables for a given date, time, and number of people
+    public Table[] getAvailableTables(LocalDateTime dateTime, int numberOfPeople) {
+        List<Table> availableTables = new ArrayList<>();
+        for (Table table : tables) {
+            if (table.isAvailable()) {
+                if (table.getCapacity() >= numberOfPeople && isTableAvailableAtDateTime(table, dateTime)) {
+                    availableTables.add(table);
+                }
+            }
+        }
+        return availableTables.toArray(new Table[0]);
+    }
+
+    // Check if a table is available at the specified date and time
+    private boolean isTableAvailableAtDateTime(Table table, LocalDateTime dateTime) {
+        // Get the reservations for the table
+        Reservation[] reservations = table.getReservations();
+
+        // Check if the table has any reservations
+        if (reservations != null && reservations.length > 0) {
+            // Iterate through the reservations
+            for (Reservation reservation : reservations) {
+                if (reservation != null) { // Add null check for reservations
+                    LocalDateTime reservationDateTime = reservation.getDateTime();
+                    if (reservationDateTime != null) { // Add null check for reservationDateTime
+                        // Check if the reservation overlaps with the specified date and time
+                        if (isOverlap(dateTime, reservationDateTime, reservation.getDateTime().plusHours(1))) {
+                            // If there's an overlap, the table is not available
+                            return false;
+                        }
+                    }
+                }
+            }
+        }
+
+        // If no overlap found, the table is available
+        return true;
+    }
+
+    // Helper method to check if two date-time ranges overlap
+    private boolean isOverlap(LocalDateTime dateTime1, LocalDateTime dateTime1Start, LocalDateTime dateTime1End) {
+        return dateTime1.isBefore(dateTime1End) && dateTime1.isAfter(dateTime1Start);
+    }
+
+    // Assign a table to a reservation
+    public void assignTable(Reservation reservation, Table table) {
+        reservation.setTable(table);
+        table.setAvailable(false);
+    }
+}
+
+// User class representing a user of the reservation system
+class User {
+    private String name;
+    private String email;
+
+    public User(String name, String email) {
+        this.name = name;
+        this.email = email;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+}
+
+// Customer class representing a customer of the restaurant
+class Customer  {
+    private String name;
+    private String email;
+    private Reservation[] bookingHistory;
+    private int bookingCount;
+    private List<Reservation> reservations;
+
+    public Customer(String name, String email) {
+        this.name = name;
+        this.email = email;
+        this.bookingHistory = new Reservation[10]; // Initialize with capacity for 10 reservations
+        this.bookingCount = 0;
+        this.reservations = new ArrayList<>();
+    }
+    public String getName() {
+        return name;
+    }
+    public String getEmail() {
+        return email;
+    }
+    public Reservation[] getBookingHistory() {
+        return bookingHistory;
+    }
+    public List<Reservation> getReservations() {
+        return reservations;
+    }
+    // Add a reservation to the customer's booking history
+    public void addReservation(Reservation reservation) {
+        if (bookingCount < bookingHistory.length) {
+            bookingHistory[bookingCount++] = reservation;
+            reservations.add(reservation); // Add to the reservations list
+        } else {
+            System.out.println("Booking history is full, cannot add more reservations.");
+        }
+    }
+}
+// CustomerManager class responsible for managing customers and their reservations
+class CustomerManager {
+    private Customer[] customers;
+    private int customerCount;
+
+    public CustomerManager() {
+        this.customers = new Customer[10]; // Initialize with capacity for 10 customers
+        this.customerCount = 0;
+    }
+
+    // Get a customer by email
+    public Customer getCustomer(String email) {
+        for (int i = 0; i < customerCount; i++) {
+            if (customers[i] != null && customers[i].getEmail().equals(email)) {
+                return customers[i];
+            }
+        }
+        return null;
+    }
+    // Add a new customer
+    public void addCustomer(Customer customer) {
+        if (customerCount < customers.length) {
+            customers[customerCount++] = customer;
+        } else {
+            System.out.println("Customer list is full, cannot add more customers.");
+        }
+    }
+    // Get the reservation count for a specific date-time
+    public int getReservationsCount(LocalDateTime dateTime) {
+        int count = 0;
+        for (Customer customer : customers) {
+            if (customer != null) {
+                for (Reservation reservation : customer.getReservations()) {
+                    if (reservation.getDateTime().equals(dateTime)) {
+                        count++;
+                    }
+                }
+            }
+        }
+        return count;
+    }
+}
+// Reservation class representing a reservation made by a customer
+class Reservation {
+    private User user;
+    private Table table;
+    private LocalDateTime dateTime;
+    private int numberOfPeople;
+    public Reservation(User user, LocalDateTime dateTime, int numberOfPeople) {
+        this.user = user;
+        this.dateTime = dateTime;
+        this.numberOfPeople = numberOfPeople;
+    }
+
+    public User getUser() {
+        return user;
+    }
+
+    public Table getTable() {
+        return table;
+    }
+
+    public void setTable(Table table) {
+        this.table = table;
+    }
+
+    public LocalDateTime getDateTime() {
+        return dateTime;
+    }
+
+    public int getNumberOfPeople() {
+        return numberOfPeople;
+    }
+
+    public void setDateTime(LocalDateTime newDateTime) {
+        this.dateTime = newDateTime;
+    }
+
+    public void setNumberOfPeople(int newNumberOfPeople) {
+        this.numberOfPeople = newNumberOfPeople;
+    }
+
+    @Override
+    public String toString() {
+        return "Reservation{" +
+                "user=" + user.getName() +
+                ", tableId=" + table.getId() +
+                ", dateTime=" + dateTime +
+                ", numberOfPeople=" + numberOfPeople +
+                '}';
+    }
+}
+// ReservationManager interface defining operations related to reservations
+interface ReservationManager {
+    boolean checkAvailability(Restaurant restaurant, LocalDateTime dateTime, int numberOfPeople);
+    Reservation makeReservation(User user, Restaurant restaurant, LocalDateTime dateTime, int numberOfPeople);
+    void cancelReservation(Reservation reservation);
+    void modifyReservation(Reservation reservation, LocalDateTime newDateTime, int newNumberOfPeople);
+}
+// ReservationManagerImpl class implementing ReservationManager interface
+class ReservationManagerImpl implements ReservationManager {
+    private CustomerManager customerManager;
+    private static final int RESERVATION_LIMIT = 5;
+
+    public ReservationManagerImpl(CustomerManager customerManager) {
+        this.customerManager = customerManager;
+    }
+
+    @Override
+    public boolean checkAvailability(Restaurant restaurant, LocalDateTime dateTime, int numberOfPeople) {
+        Table[] availableTables = restaurant.getTableManager().getAvailableTables(dateTime, numberOfPeople);
+                int reservationCount = customerManager.getReservationsCount(dateTime);
+        return availableTables.length > 0 && reservationCount < RESERVATION_LIMIT;
+    }
+
+    @Override
+    public Reservation makeReservation(User user, Restaurant restaurant, LocalDateTime dateTime, int numberOfPeople) {
+        try {
+            if (checkAvailability(restaurant, dateTime, numberOfPeople)) {
+                Table[] availableTables = restaurant.getTableManager().getAvailableTables(dateTime, numberOfPeople);
+                if (availableTables.length > 0) {
+                    Table assignedTable = availableTables[0];
+                    Reservation reservation = new Reservation(user, dateTime, numberOfPeople);
+                    reservation.setTable(assignedTable);
+                    assignedTable.setAvailable(false);
+
+                    Customer customer = customerManager.getCustomer(user.getEmail());
+                    if (customer == null) {
+                        customer = new Customer(user.getName(), user.getEmail());
+                        customerManager.addCustomer(customer);
+                    }
+
+                    customer.addReservation(reservation);
+                    return reservation;
+                }
+            }
+        } catch (Exception e) {
+            System.out.println("An error occurred: " + e.getMessage());
+        }
+        return null;
+    }
+
+    @Override
+    public void cancelReservation(Reservation reservation) {
+        if (reservation != null) {
+            reservation.getTable().setAvailable(true);
+            reservation.setTable(null);
+            // You might want to remove the reservation from the customer's list as well
+            System.out.println("Reservation canceled successfully.");
+        } else {
+            System.out.println("Invalid reservation.");
+        }
+    }
+
+    @Override
+    public void modifyReservation(Reservation reservation, LocalDateTime newDateTime, int newNumberOfPeople) {
+        if (reservation != null) {
+            reservation.setDateTime(newDateTime);
+            reservation.setNumberOfPeople(newNumberOfPeople);
+            System.out.println("Reservation modified successfully.");
+        } else {
+            System.out.println("Invalid reservation.");
+        }
+    }
+}
+
+// UserInterface interface defining methods for user interaction
+interface UserInterface {
+
+    
+    void showRestaurantList(List<Restaurant> restaurants);
+    void showAvailableTables(Restaurant restaurant, LocalDateTime dateTime, int numberOfPeople);
+    void makeReservation(User user, Restaurant restaurant, LocalDateTime dateTime, int numberOfPeople);
+    void manageReservation(Reservation reservation, String action);
+    void viewReservations(Customer customer);
+        void setRestaurants(List<Restaurant> restaurants);
+
+}
+
+// UserInterfaceImpl class implementing UserInterface interface
+class UserInterfaceImpl implements UserInterface {
+    private ReservationManager reservationManager;
+    private CustomerManager customerManager;
+    List<Restaurant> restaurants; // Change this line
+
+
+    public UserInterfaceImpl(ReservationManager reservationManager, CustomerManager customerManager) {
+        this.reservationManager = reservationManager;
+        this.customerManager = customerManager;
+        this.restaurants = new ArrayList<>();
+    }
+
+    // Method to initialize restaurants
+   
+     public void setRestaurants(List<Restaurant> restaurants) {
+        this.restaurants = restaurants;
+    }
+    @Override
+    public void showRestaurantList(List<Restaurant> restaurants) {
+        System.out.println("Available Restaurants:");
+        int index = 1;
+        for (Restaurant restaurant : restaurants) {
+            System.out.println(index++ + ". " + restaurant.getName());
+        }
+    }
+
+    @Override
+    public void showAvailableTables(Restaurant restaurant, LocalDateTime dateTime, int numberOfPeople) {
+        Table[] availableTables = restaurant.getTableManager().getAvailableTables(dateTime, numberOfPeople);
+        if (availableTables.length > 0) {
+            System.out.println("Available tables at " + restaurant.getName() + ":");
+            for (Table table : availableTables) {
+                System.out.println("Table " + table.getId() + " (Capacity: " + table.getCapacity() + ")");
+            }
+        } else {
+            System.out.println("No available tables at " + restaurant.getName() + ".");
+        }
+    }
+
+    @Override
+    public void makeReservation(User user, Restaurant restaurant, LocalDateTime dateTime, int numberOfPeople) {
+        Reservation reservation = reservationManager.makeReservation(user, restaurant, dateTime, numberOfPeople);
+        if (reservation != null) {
+            System.out.println("Reservation successful. Table assigned: " + reservation.getTable().getId());
+        } else {
+            System.out.println("Failed to make reservation.");
+        }
+    }
+
+    @Override
+    public void manageReservation(Reservation reservation, String action) {
+        switch (action.toLowerCase()) {
+            case "cancel":
+                reservationManager.cancelReservation(reservation);
+                break;
+            case "modify":
+                Scanner scanner = new Scanner(System.in);
+                System.out.print("Enter new date and time (YYYY-MM-DDTHH:MM): ");
+                String dateTimeStr = scanner.nextLine();
+                LocalDateTime newDateTime = LocalDateTime.parse(dateTimeStr);
+                System.out.print("Enter new number of people: ");
+                int newNumberOfPeople = scanner.nextInt();
+                reservationManager.modifyReservation(reservation, newDateTime, newNumberOfPeople);
+                scanner.close();
+                break;
+            default:
+                System.out.println("Invalid action.");
+        }
+    }
+
+    @Override
+    public void viewReservations(Customer customer) {
+        List<Reservation> reservations = customer.getReservations();
+        if (!reservations.isEmpty()) {
+            System.out.println("Your reservations:");
+            for (int i = 0; i < reservations.size(); i++) {
+                Reservation reservation = reservations.get(i);
+                System.out.println((i + 1) + ". " + reservation);
+            }
+        } else {
+            System.out.println("No reservations found for the provided email.");
+        }
+    }
+}
+
+public class Mavenproject61 {
+
+public static void main(String[] args) {
+    CustomerManager customerManager = new CustomerManager();
+    ReservationManager reservationManager = new ReservationManagerImpl(customerManager);
+
+    List<Restaurant> restaurants = new ArrayList<>();
+    restaurants.add(new Restaurant("Spice Bazaar"));
+    restaurants.add(new Restaurant("Haveli Restaurant"));
+    restaurants.add(new Restaurant("Hashery Cafe & Grill"));
+    UserInterface userInterface = new UserInterfaceImpl(reservationManager, customerManager);
+    Scanner scanner = new Scanner(System.in);
+    UserInterfaceImpl userInterfaceImpl = new UserInterfaceImpl(reservationManager, customerManager);
+    userInterfaceImpl.setRestaurants(restaurants);
+
+    System.out.println("Welcome to the Restaurant Reservation System");
+    System.out.println("Available actions:");
+    System.out.println("1. Select Restaurant and Show Available Tables");
+    System.out.println("2. Make Reservation");
+    System.out.println("3. Manage Reservation");
+    System.out.println("4. View Reservations");
+    System.out.println("5. Exit");
+
+    boolean running = true;
+    while (running) {
+        try {
+            System.out.print("Select an option: ");
+            int option = scanner.nextInt();
+            scanner.nextLine(); // Consume newline
+
+            switch (option) {
+                case 1:
+                    // Show restaurant list and available tables
+                    userInterface.showRestaurantList(userInterfaceImpl.restaurants);
+                    System.out.print("Enter the number of the restaurant: ");
+                    int restaurantNumber = scanner.nextInt();
+                    scanner.nextLine(); // Consume newline
+                    if (restaurantNumber >= 1 && restaurantNumber <= userInterfaceImpl.restaurants.size()) {
+                        LocalDateTime dateTime = null;
+                        boolean validDateTime = false;
+                        do {
+                            try {
+                                System.out.print("Enter date and time (YYYY-MM-DDTHH:MM): ");
+                                String dateTimeStr = scanner.nextLine();
+                                dateTime = LocalDateTime.parse(dateTimeStr);
+                                validDateTime = true;
+                            } catch (DateTimeParseException e) {
+                                System.out.println("Invalid date-time format. Please enter date-time in YYYY-MM-DDTHH:MM format.");
+                            }
+                        } while (!validDateTime);
+
+                        System.out.print("Enter number of people: ");
+                        int numberOfPeople = scanner.nextInt();
+                        userInterface.showAvailableTables(userInterfaceImpl.restaurants.get(restaurantNumber - 1), dateTime, numberOfPeople);
+                    } else {
+                        System.out.println("Invalid restaurant number.");
+                    }
+                    break;
+                case 2:
+                    // Make reservation
+                    System.out.print("Enter your name: ");
+                    String name = scanner.nextLine();
+                    System.out.print("Enter your email: ");
+                    String email = scanner.nextLine();
+                    User user = new User(name, email);
+                    userInterface.showRestaurantList(userInterfaceImpl.restaurants);
+                    System.out.print("Enter the number of the restaurant: ");
+                    int restaurantNumberForReservation = scanner.nextInt();
+                    scanner.nextLine(); // Consume newline
+                    if (restaurantNumberForReservation >= 1 && restaurantNumberForReservation <= userInterfaceImpl.restaurants.size()) {
+                        LocalDateTime dateTime = null;
+                        boolean validDateTime = false;
+                        do {
+                            try {
+                                System.out.print("Enter date and time (YYYY-MM-DDTHH:MM): ");
+                                String dateTimeStr = scanner.nextLine();
+                                dateTime = LocalDateTime.parse(dateTimeStr);
+                                validDateTime = true;
+                            } catch (DateTimeParseException e) {
+                                System.out.println("Invalid date-time format. Please enter date-time in YYYY-MM-DDTHH:MM format.");
+                            }
+                        } while (!validDateTime);
+
+                        System.out.print("Enter number of people: ");
+                        int numberOfPeople = scanner.nextInt();
+                        userInterface.makeReservation(user, userInterfaceImpl.restaurants.get(restaurantNumberForReservation - 1), dateTime, numberOfPeople);
+                    } else {
+                        System.out.println("Invalid restaurant number.");
+                    }
+                    break;
+                case 3:
+                    // Manage reservation
+                    System.out.print("Enter your email: ");
+                    String customerEmail = scanner.nextLine();
+                    Customer customer = customerManager.getCustomer(customerEmail);
+                    if (customer != null) {
+                        userInterface.viewReservations(customer);
+                        System.out.print("Enter the number of the reservation you want to manage: ");
+                        int reservationNumber = Integer.parseInt(scanner.nextLine());
+                        List<Reservation> reservations = customer.getReservations();
+                        if (reservationNumber >= 1 && reservationNumber <= reservations.size()) {
+                            Reservation reservation = reservations.get(reservationNumber - 1);
+                            System.out.println("1. Cancel Reservation");
+                            System.out.println("2. Modify Reservation");
+                            System.out.print("Select an action: ");
+                            int actionNumber = Integer.parseInt(scanner.nextLine());
+                            switch (actionNumber) {
+                                case 1:
+                                    userInterface.manageReservation(reservation, "cancel");
+                                    break;
+                                case 2:
+                                    userInterface.manageReservation(reservation, "modify");
+                                    break;
+                                default:
+                                    System.out.println("Invalid action.");
+                            }
+                        } else {
+                            System.out.println("Invalid reservation number.");
+                        }
+                    } else {
+                        System.out.println("No customer found with the provided email.");
+                    }
+                    break;
+                case 4:
+                    // View reservations
+                    System.out.print("Enter your email: ");
+                    String emailForReservations = scanner.nextLine();
+                    Customer customerForReservations = customerManager.getCustomer(emailForReservations);
+                    if (customerForReservations != null) {
+                        userInterface.viewReservations(customerForReservations);
+                    } else {
+                        System.out.println("No customer found with the provided email.");
+                    }
+                    break;
+                case 5:
+                    running = false;
+                    break;
+                default:
+                    System.out.println("Invalid option. Please select again.");
+            }
+         } catch (Exception e) {
+            System.out.println("An error occurred: " + e.getMessage());
+        }
+    }
+    scanner.close();
+    System.out.println("Thank you for using the Restaurant Reservation System.");
+}
+}
