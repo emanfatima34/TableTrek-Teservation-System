@@ -694,6 +694,21 @@ public class Mavenproject65 {
         }
     }
 
-    private void viewReservations() {
+   private void viewReservations() {
         String customerEmail = JOptionPane.showInputDialog("Enter your email:");
         Customer customer = userInterface.customerManager.getCustomer(customerEmail);
+
+        if (customer != null) {
+            outputArea.setText("");
+            userInterface.viewReservations(customer);
+        } else {
+            JOptionPane.showMessageDialog(frame, "Customer not found.");
+        }
+    }
+
+    private void revalidateAndRepaint() {
+        panel.revalidate();
+        panel.repaint();
+        frame.pack();
+    }
+}
