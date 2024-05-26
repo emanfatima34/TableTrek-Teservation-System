@@ -611,6 +611,7 @@ public class Mavenproject65 {
         panel.add(showRestaurantsButton);
         panel.add(makeReservationButton);
         panel.add(backButton);
+        panel.add(new JScrollPane(outputArea));
         revalidateAndRepaint();
     }
 
