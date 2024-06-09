@@ -1,6 +1,14 @@
 TABLETREK RESERVATION SYSTEM
 CODE:
-package com.mycompany.mavenproject65;
+
+
+package com.mycompany.mavenproject69;
+
+/**
+ *
+ * @author HP
+ */
+
 
 /**
 
@@ -384,7 +392,7 @@ class UserInterfaceImpl implements UserInterface {
     public ReservationManager reservationManager;
     public CustomerManager customerManager;
     public List<Restaurant> restaurants;
-
+  //  ReservationSystemGUI reservationSystemGUI;
     public UserInterfaceImpl(ReservationManager reservationManager, CustomerManager customerManager) {
         this.reservationManager = reservationManager;
         this.customerManager = customerManager;
@@ -434,6 +442,7 @@ class UserInterfaceImpl implements UserInterface {
     @Override
     public void displayModificationConfirmation(Reservation reservation) {
         System.out.println("Reservation modified: " + reservation);
+     //   reservationSystemGUI.outputArea.setText("Reservation modified:\n" + reservation.toString());
     }
 
     // Manage a reservation (cancel or modify)
@@ -468,7 +477,7 @@ class UserInterfaceImpl implements UserInterface {
 }
 
 // Main class to run the restaurant reservation system
-public class Mavenproject65 {
+public class Mavenproject69 {
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
             CustomerManager customerManager = new CustomerManager();
@@ -494,7 +503,8 @@ public class Mavenproject65 {
     private UserInterfaceImpl userInterface;
     private JFrame frame;
     private JPanel panel;
-    private JTextArea outputArea;
+     JTextArea outputArea;
+      private JTextArea reservationsArea;
 
     public ReservationSystemGUI(UserInterfaceImpl userInterface) {
         this.userInterface = userInterface;
@@ -508,9 +518,15 @@ public class Mavenproject65 {
         outputArea = new JTextArea(10, 30);
         outputArea.setEditable(false);
         panel.add(new JScrollPane(outputArea));
-
+        reservationsArea = new JTextArea();
+        reservationsArea.setEditable(false); 
+        reservationsArea.setFont(new Font("Serif", Font.PLAIN, 18));
+        
+        
         setupInitialPanel();
-
+          // Add the text area to a scroll pane
+        JScrollPane scrollPane = new JScrollPane(reservationsArea);
+        frame.add(scrollPane, BorderLayout.CENTER);
         frame.add(panel);
         frame.pack();
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -526,7 +542,8 @@ public class Mavenproject65 {
         adminButton.setPreferredSize(new Dimension(400, 150));
         customerButton.setPreferredSize(new Dimension(200, 150));
          // For font
-        Font buttonFont = new Font(adminButton.getFont().getName(), Font.PLAIN, 20);
+        Font buttonFont = new Font(adminButton.getFont().getName(), Font.BOLD, 30);
+        
         adminButton.setFont(buttonFont);
         customerButton.setFont(buttonFont);
 
@@ -552,9 +569,13 @@ public class Mavenproject65 {
         JButton manageReservationButton = new JButton("Manage Reservation");
         JButton viewReservationsButton = new JButton("View Reservations");
         JButton backButton = new JButton("Back");
-        
+
+        manageReservationButton.setFont(new Font("Serif", Font.PLAIN, 22));  
+        viewReservationsButton.setFont(new Font("Serif", Font.PLAIN, 22));
+        backButton.setFont(new Font("Serif", Font.PLAIN, 22));
         manageReservationButton.setPreferredSize(new Dimension(400, 150));
         viewReservationsButton.setPreferredSize(new Dimension(400, 150));
+        backButton.setPreferredSize(new Dimension(400, 150));
         
 
         manageReservationButton.addActionListener(new ActionListener() {
@@ -578,6 +599,7 @@ public class Mavenproject65 {
         panel.add(manageReservationButton);
         panel.add(viewReservationsButton);
         panel.add(backButton);
+       // panel.add(new JScrollPane(outputArea));
         revalidateAndRepaint();
     }
 
@@ -585,8 +607,14 @@ public class Mavenproject65 {
         panel.removeAll();
         JButton showRestaurantsButton = new JButton("Show Restaurants");
         JButton makeReservationButton = new JButton("Make Reservation");
+        JButton viewReservationsButton = new JButton("View Reservations");
         JButton backButton = new JButton("Back");
         
+         
+        showRestaurantsButton.setFont(new Font("Serif", Font.PLAIN, 22)); 
+        makeReservationButton.setFont(new Font("Serif", Font.PLAIN, 22));
+        viewReservationsButton.setFont(new Font("Serif", Font.PLAIN, 22));
+        backButton.setFont(new Font("Serif", Font.PLAIN, 22));
         showRestaurantsButton.setPreferredSize(new Dimension(400, 150));
         makeReservationButton.setPreferredSize(new Dimension(400, 150));
 
@@ -602,6 +630,12 @@ public class Mavenproject65 {
             }
         });
         
+         viewReservationsButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                viewReservations();
+            }
+        });
+         
         backButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 setupInitialPanel();
@@ -610,6 +644,7 @@ public class Mavenproject65 {
 
         panel.add(showRestaurantsButton);
         panel.add(makeReservationButton);
+        panel.add(viewReservationsButton);
         panel.add(backButton);
         panel.add(new JScrollPane(outputArea));
         revalidateAndRepaint();
@@ -694,17 +729,33 @@ public class Mavenproject65 {
         }
     }
 
-   private void viewReservations() {
+ private void viewReservations() {
         String customerEmail = JOptionPane.showInputDialog("Enter your email:");
         Customer customer = userInterface.customerManager.getCustomer(customerEmail);
 
         if (customer != null) {
-            outputArea.setText("");
-            userInterface.viewReservations(customer);
+            outputArea.setText(""); // Clear existing output
+            reservationsArea.setText(""); // Clear reservations area
+
+            List<Reservation> reservations = customer.getReservations();
+            if (!reservations.isEmpty()) {
+                for (int i = 0; i < reservations.size(); i++) {
+                    Reservation reservation = reservations.get(i);
+                    reservationsArea.append((i + 1) + ". " + reservation + "\n");
+                }
+                panel.add(new JScrollPane(reservationsArea)); // Add reservationsArea to panel
+            } else {
+                reservationsArea.setText("No reservations found.");
+                panel.add(new JScrollPane(reservationsArea)); // Add reservationsArea to panel
+            }
         } else {
             JOptionPane.showMessageDialog(frame, "Customer not found.");
         }
+
+        revalidateAndRepaint();
     }
+
+   
 
     private void revalidateAndRepaint() {
         panel.revalidate();
