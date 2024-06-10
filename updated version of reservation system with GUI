@@ -4,18 +4,7 @@ CODE:
 
 package com.mycompany.mavenproject69;
 
-/**
- *
  * @author HP
- */
-
-
-/**
-
- *
- * @author HP
- */
-
 
 import javax.swing.*;
 import java.awt.*;
@@ -329,31 +318,40 @@ class ReservationManagerImpl implements ReservationManager {
     }
 
     @Override
-    public boolean checkAvailability(Restaurant restaurant, LocalDateTime dateTime, int numberOfPeople) {
+       public boolean checkAvailability(Restaurant restaurant, LocalDateTime dateTime, int numberOfPeople) {
         Table[] availableTables = restaurant.getTableManager().getAvailableTables(dateTime, numberOfPeople);
-        return availableTables.length > 0 && customerManager.getReservationsCount(dateTime) < RESERVATION_LIMIT;
+        int reservationsCount = customerManager.getReservationsCount(dateTime);
+        return availableTables.length > 0 && reservationsCount < RESERVATION_LIMIT;
     }
 
     @Override
     public Reservation makeReservation(User user, Restaurant restaurant, LocalDateTime dateTime, int numberOfPeople) {
-        if (checkAvailability(restaurant, dateTime, numberOfPeople)) {
-            Reservation reservation = new Reservation(user, dateTime, numberOfPeople);
-            Customer customer = customerManager.getCustomer(user.getEmail());
-            if (customer == null) {
-                customer = new Customer(user.getName(), user.getEmail());
-                customerManager.addCustomer(customer);
-            }
-            customer.addReservation(reservation);
-            Table[] availableTables = restaurant.getTableManager().getAvailableTables(dateTime, numberOfPeople);
-            if (availableTables.length > 0) {
-                restaurant.getTableManager().assignTable(reservation, availableTables[0]);
-                reservationCount++;
-                System.out.println("Reservation id: " + reservationCount);
-                return reservation;
-            }
+    if (checkAvailability(restaurant, dateTime, numberOfPeople)) {
+        Reservation reservation = new Reservation(user, dateTime, numberOfPeople);
+        Customer customer = customerManager.getCustomer(user.getEmail());
+
+        if (customer == null) {
+            customer = new Customer(user.getName(), user.getEmail());
+            customerManager.addCustomer(customer);
         }
-        return null;
+        
+        customer.addReservation(reservation);
+        
+        Table[] availableTables = restaurant.getTableManager().getAvailableTables(dateTime, numberOfPeople);
+        if (availableTables.length > 0) {
+            restaurant.getTableManager().assignTable(reservation, availableTables[0]);
+            reservationCount++;
+            System.out.println("Reservation id: " + reservationCount);
+            return reservation;
+        } else {
+            System.out.println("No available tables for the specified date and time.");
+        }
+    } else {
+        System.out.println("Restaurant is fully booked for the specified date and time.");
     }
+    return null;
+}
+
 
     @Override
     public void cancelReservation(Reservation reservation) {
@@ -377,7 +375,7 @@ interface UserInterface {
 
     void displayAvailableTables(Table[] availableTables);
     
-    void makeReservation(User user, Restaurant restaurant, LocalDateTime dateTime, int numberOfPeople);
+    Reservation makeReservation(User user, Restaurant restaurant, LocalDateTime dateTime, int numberOfPeople);
 
     void displayReservationConfirmation(Reservation reservation);
 
@@ -420,13 +418,14 @@ class UserInterfaceImpl implements UserInterface {
         }
     }
     @Override
-    public void makeReservation(User user, Restaurant restaurant, LocalDateTime dateTime, int numberOfPeople) {
+   public Reservation makeReservation(User user, Restaurant restaurant, LocalDateTime dateTime, int numberOfPeople) {
         Reservation reservation = reservationManager.makeReservation(user, restaurant, dateTime, numberOfPeople);
         if (reservation != null) {
             System.out.println("Reservation successful. Table assigned: " + reservation.getTable().getId());
         } else {
             System.out.println("Failed to make reservation.");
         }
+        return reservation;
     }
 
     @Override
@@ -537,7 +536,7 @@ public class Mavenproject69 {
         panel.removeAll();
         JButton adminButton = new JButton("Admin");
         JButton customerButton = new JButton("Customer");
-        
+        JButton exitButton = new JButton("Exit");
         // Set preferred size for buttons
         adminButton.setPreferredSize(new Dimension(400, 150));
         customerButton.setPreferredSize(new Dimension(200, 150));
@@ -558,9 +557,17 @@ public class Mavenproject69 {
                 setupCustomerPanel();
             }
         });
+        exitButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                System.exit(0);
+            }
+        });
+        exitButton.setFont(new Font("Serif", Font.BOLD, 22));  
+
 
         panel.add(adminButton);
         panel.add(customerButton);
+        panel.add(exitButton);
         revalidateAndRepaint();
     }
 
@@ -658,38 +665,43 @@ public class Mavenproject69 {
         }
     }
 
-    private void makeReservation() {
-        String name = JOptionPane.showInputDialog("Enter your name:");
-        String email = JOptionPane.showInputDialog("Enter your email:");
+   private void makeReservation() {
+    String name = JOptionPane.showInputDialog("Enter your name:");
+    String email = JOptionPane.showInputDialog("Enter your email:");
 
-        User user = new User(name, email);
+    User user = new User(name, email);
 
-        showRestaurants();
-        String restaurantNumberStr = JOptionPane.showInputDialog("Enter the number of the restaurant:");
-        int restaurantNumber = Integer.parseInt(restaurantNumberStr);
+    showRestaurants();
+    String restaurantNumberStr = JOptionPane.showInputDialog("Enter the number of the restaurant:");
+    int restaurantNumber = Integer.parseInt(restaurantNumberStr);
 
-        if (restaurantNumber >= 1 && restaurantNumber <= userInterface.restaurants.size()) {
-            LocalDateTime dateTime = null;
-            boolean validDateTime = false;
-            do {
-                try {
-                    String dateTimeStr = JOptionPane.showInputDialog("Enter date and time (YYYY-MM-DDTHH:MM):");
-                    dateTime = LocalDateTime.parse(dateTimeStr);
-                    validDateTime = true;
-                } catch (DateTimeParseException e) {
-                    JOptionPane.showMessageDialog(frame, "Invalid date-time format. Please enter date-time in YYYY-MM-DDTHH:MM format.");
-                }
-            } while (!validDateTime);
+    if (restaurantNumber >= 1 && restaurantNumber <= userInterface.restaurants.size()) {
+        LocalDateTime dateTime = null;
+        boolean validDateTime = false;
+        do {
+            try {
+                String dateTimeStr = JOptionPane.showInputDialog("Enter date and time (YYYY-MM-DDTHH:MM):");
+                dateTime = LocalDateTime.parse(dateTimeStr);
+                validDateTime = true;
+            } catch (DateTimeParseException e) {
+                JOptionPane.showMessageDialog(frame, "Invalid date-time format. Please enter date-time in YYYY-MM-DDTHH:MM format.");
+            }
+        } while (!validDateTime);
 
-            String numberOfPeopleStr = JOptionPane.showInputDialog("Enter number of people:");
-            int numberOfPeople = Integer.parseInt(numberOfPeopleStr);
+        String numberOfPeopleStr = JOptionPane.showInputDialog("Enter number of people:");
+        int numberOfPeople = Integer.parseInt(numberOfPeopleStr);
 
-            userInterface.makeReservation(user, userInterface.restaurants.get(restaurantNumber - 1), dateTime, numberOfPeople);
-            JOptionPane.showMessageDialog(frame, "Reservation done successfully.");
+        Reservation reservation = userInterface.makeReservation(user, userInterface.restaurants.get(restaurantNumber - 1), dateTime, numberOfPeople);
+        if (reservation != null) {
+            JOptionPane.showMessageDialog(frame, "Reservation done successfully. Table assigned: " + reservation.getTable().getId());
         } else {
-            JOptionPane.showMessageDialog(frame, "Invalid restaurant number.");
+            JOptionPane.showMessageDialog(frame, "Reservations are full for this date and time.");
         }
+    } else {
+        JOptionPane.showMessageDialog(frame, "Invalid restaurant number.");
     }
+}
+
 
     private void manageReservation() {
         String customerEmail = JOptionPane.showInputDialog("Enter your email:");
